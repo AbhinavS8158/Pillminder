@@ -1,632 +1,128 @@
-💊 PillMinder — Medicine Reminder App
+# 💊 PillMinder — Medicine Reminder App
 
-A production-focused, offline-first medicine reminder application built with Flutter. PillMinder is designed to provide reliable medication scheduling, local notifications, dose tracking, and reminder recovery across app closures and device restarts.
+A production-focused, offline-first medicine reminder application built with Flutter. PillMinder is designed to provide reliable medication scheduling, local notifications, dose tracking, and automatic reminder recovery across application closures and device restarts.
 
-🎯 Objective
+---
 
-Build a reliable, user-friendly, and production-ready Medicine Reminder application using:
+## 🚀 Key Features
 
-Flutter
+* **Offline-First & Local Storage**: Powered by **Hive**, the app persists all medicines, schedules, user settings, and dose logs locally on the device with zero network dependencies.
+* **Automatic Occurrence Generation**: Calculates individual dose occurrences dynamically. For example, a medicine active for 7 days with 3 doses per day yields exactly 21 occurrences, each independently trackable.
+* **Decoupled Snapshots for Historical Accuracy**: When occurrences are generated, the dose strength (e.g. `500 mg • 1 Tablet`) and food instructions are stored as snapshots. Editing a medicine's strength later leaves historical logs unchanged (e.g., past logs still show `500 mg` while future ones show `1000 mg`).
+* **Ongoing Medication Strategy**: For medicines with no end date, a **14-day rolling scheduling window** is implemented. This keeps the local database bounded and respects OS notification limits (like the iOS 64-notification threshold).
+* **Local Notifications with Actions**: Delivers alarms when the app is foregrounded, backgrounded, closed, or when the phone is locked. Notifications feature interactive action buttons:
+  * **✓ Taken**: Logs the dose as taken with the actual action timestamp.
+  * **⏳ Snooze**: Temporarily silences the alarm and reschedules it based on user preference (5, 10, 15, or 30 minutes).
+  * **❌ Skip**: Logs the dose as skipped.
+* **Device Restart Recovery**: Listens to Android boot completion triggers (`RECEIVE_BOOT_COMPLETED`) and executes a startup sync service that reconciles persisted schedules with platform notification registries, automatically rescheduling any missing alerts.
+* **Active Sound Previews**: Users can select and preview custom synthesized reminder alarms (`alarm1.wav`, `alarm2.wav`, and `alarm3.wav`) in the settings using the `audioplayers` package.
+* **Dynamic Notification Channels**: Workarounds Android's notification channel caching limitations by creating dynamic channel IDs based on the active sound file, ensuring audio changes apply instantly.
+* **Premium Micro-Animations**:
+  * **3-Second Splash Screen**: Features pulse and scale-up brand animations on launch before cross-fading to the dashboard.
+  * **Success Spring Animation**: Uses a dual-interval elastic animation to spring a checkmark into view upon successfully adding or editing a medicine.
+  * **Auto-Centering Date Strip**: The horizontal calendar date strip automatically scrolls to center today's date on load and centers any other tapped dates smoothly.
 
-Hive
+---
 
-Local Notifications
+## 🏗️ Architecture & Project Structure
 
-Clean Architecture
+The project is structured following **Clean Architecture** principles to separate concerns, make features modular, and ensure business logic is highly testable.
 
-Riverpod / Bloc
-
-Android + iOS
-
-Offline-first architecture
-
-The application should reliably handle the complete reminder lifecycle:
-
-Create medicine
-      ↓
-Close app
-      ↓
-Reminder appears
-      ↓
-Take medicine
-      ↓
-Close app
-      ↓
-Next reminder appears
-
-It must also recover correctly after a device restart:
-
-Create medicine
-      ↓
-Restart phone
-      ↓
-Open app
-      ↓
-Medicine data remains
-      ↓
-Future reminders remain correctly scheduled
-
-Platform-appropriate recovery and reminder rescheduling must be implemented.
-
-✨ Core Requirements
-
-Medicine Management
-
-Create medicines
-
-Edit medicines
-
-Delete medicines
-
-Configure dosage and schedules
-
-Configure start and end dates
-
-Support medicines without an end date
-
-Support multiple doses per day
-
-Support a single-day medicine schedule
-
-Reminder Management
-
-Schedule local notifications for future doses
-
-Support multiple reminders per medicine
-
-Prevent duplicate notifications
-
-Handle reminders while the app is closed
-
-Recover/reschedule reminders after device restart
-
-Reschedule reminders when medicine details change
-
-Cancel scheduled reminders when a medicine is deleted
-
-Dose Tracking
-
-Each dose occurrence should support:
-
-Taken
-
-Skipped
-
-Snoozed
-
-Automatically missed
-
-The application should maintain a reliable history of dose occurrences.
-
-🏗️ Clean Architecture
-
-The project should follow clean, maintainable architecture with clear separation of responsibilities.
-
-Recommended structure:
-
+```text
 lib/
 ├── core/
+│   ├── models/          # Persistent Hive Database Entities
+│   ├── theme/           # App design system, custom themes, and gradients
+│   ├── services/        # Hive initialization and Local Notifications engine
+│   ├── repositories/    # Repo interfaces and database coordination
+│   └── utils/           # Mathematical occurrence generator and date helpers
 │
-├── features/
-│   ├── dashboard/
-│   ├── medicine/
-│   ├── reminder/
-│   ├── history/
-│   └── settings/
-│
-├── data/
-├── domain/
-└── presentation/
-
-Recommended application flow:
-
-UI
- ↓
-State Management
- ↓
-Use Case
- ↓
-Repository
- ↓
-Hive / Notification Service
-
-Architecture Principles
-
-UI widgets should remain presentation-focused.
-
-Business logic must not be placed directly inside UI widgets.
-
-Domain logic should be independent of Flutter-specific UI code where practical.
-
-Data access should happen through repositories.
-
-Notification scheduling should be handled by a dedicated notification service.
-
-Local persistence should be abstracted behind repository interfaces.
-
-Features should remain modular and testable.
-
-💾 Offline-First
-
-PillMinder should work without requiring an internet connection.
-
-Local Storage
-
-Use Hive for persistent local data such as:
-
-Medicines
-
-Medicine schedules
-
-Dose occurrences
-
-Dose status
-
-Reminder configuration
-
-Relevant application settings
-
-The app should restore its state from local storage after:
-
-App closure
-
-App relaunch
-
-Device restart
-
-🔔 Notifications
-
-Use local notifications to deliver medicine reminders.
-
-The notification system should support:
-
-Future scheduled reminders
-
-Multiple doses per day
-
-Notification cancellation
-
-Notification rescheduling
-
-Duplicate prevention
-
-App-closed reminders
-
-Device-restart recovery
-
-Reminder Recovery
-
-On application startup, the system should verify the persisted medicine schedules and reconcile them with the currently scheduled notifications.
-
-Conceptually:
-
-App Start
-   ↓
-Load medicines from Hive
-   ↓
-Load active schedules
-   ↓
-Validate future occurrences
-   ↓
-Detect missing/invalid notifications
-   ↓
-Reschedule required reminders
-
-Platform-specific behavior and operating-system notification restrictions should be handled appropriately for Android and iOS.
-
-📅 Dose Occurrences
-
-A medicine schedule should generate individual dose occurrences.
-
-For example:
-
-Start Date: 10 Aug
-End Date:   16 Aug
-Doses/Day:  3
-
-Expected:
-
-7 days × 3 doses = 21 dose occurrences
-
-Therefore:
-
-10 Aug → 16 Aug with 3 doses/day = 21 dose occurrences
-
-Each occurrence should be independently trackable as:
-
-Scheduled
-Taken
-Skipped
-Snoozed
-Missed
-
-🧪 Testing Requirements
-
-The application must be tested for the following scenarios:
-
-Medicine Scheduling
-
-Multiple doses per day
-
-Start/end dates
-
-No end date
-
-Same start/end date
-
-Different medicine schedules
-
-Dose Status
-
-Taken
-
-Skipped
-
-Automatically missed
-
-Snooze
-
-Notifications
-
-Local notifications appear correctly
-
-App closed
-
-App reopened
-
-Phone restarted
-
-Future reminders are recovered
-
-Duplicate notifications are prevented
-
-Medicine Updates
-
-Medicine editing
-
-Medicine deletion
-
-Schedule changes
-
-Notification rescheduling after editing
-
-Notification cancellation after deletion
-
-History
-
-Dose history is persisted
-
-Taken doses appear correctly
-
-Skipped doses appear correctly
-
-Missed doses appear correctly
-
-History remains available after app restart
-
-Search and Filters
-
-Medicine search
-
-History search
-
-Relevant filters
-
-Empty search results
-
-🎨 UI / UX
-
-The application should have a modern, clean, and user-friendly design.
-
-Requirements
-
-Responsive Android and iOS layouts
-
-Clean typography
-
-Consistent spacing
-
-Clear primary and secondary actions
-
-Clear dose status indicators
-
-Useful empty states
-
-Loading states where required
-
-Proper error handling
-
-Accessible UI
-
-Light/Dark theme support where practical
-
-Consistent navigation
-
-Clear confirmation for destructive actions
-
-The final application should feel like a real production application rather than a tutorial or college project.
-
-📱 Platform Support
-
-PillMinder targets:
-
-Android
-
-iOS
-
-Platform-specific notification behavior, permissions, scheduling limitations, and restart/recovery mechanisms should be handled according to each operating system.
-
-🧩 Suggested Feature Modules
-
-Dashboard
-
-Provides an overview of the user's medication schedule and upcoming doses.
-
-Possible responsibilities:
-
-Today's medicines
-
-Upcoming doses
-
-Dose status
-
-Quick actions
-
-Empty states
-
-Medicine
-
-Responsible for medicine lifecycle management:
-
-Create
- ↓
-View
- ↓
-Edit
- ↓
-Delete
-
-Reminder
-
-Responsible for:
-
-Schedule generation
-
-Notification scheduling
-
-Snooze
-
-Reminder cancellation
-
-Reminder recovery
-
-Duplicate prevention
-
-History
-
-Responsible for:
-
-Dose occurrence history
-
-Taken doses
-
-Skipped doses
-
-Missed doses
-
-Search
-
-Filters
-
-Settings
-
-Responsible for application-level preferences and notification-related configuration.
-
-🔄 Reminder Lifecycle
-
-The expected lifecycle is:
-
-Create Medicine
-      ↓
-Generate Dose Occurrences
-      ↓
-Persist Data in Hive
-      ↓
-Schedule Local Notifications
-      ↓
-Notification Triggered
-      ↓
-User Action
- ┌────┼──────────┐
- ↓    ↓          ↓
-Taken Skipped  Snooze
- ↓    ↓          ↓
-Update Dose Status
-      ↓
-Persist History
-      ↓
-Next Reminder
-
-For an unhandled dose:
-
-Reminder Time Passed
-        ↓
-Dose Not Completed
-        ↓
-Mark as Missed
-        ↓
-Persist History
-
-🛡️ Reliability Requirements
-
-The reminder system should prioritize reliability.
-
-Important considerations:
-
-Persist schedules before relying on them.
-
-Use deterministic identifiers for scheduled notifications.
-
-Prevent duplicate notification scheduling.
-
-Reconcile stored schedules with scheduled platform notifications.
-
-Reschedule future reminders after relevant lifecycle events.
-
-Ensure deleting/editing a medicine does not leave stale notifications.
-
-Handle notification permission states gracefully.
-
-Handle invalid or expired schedules safely.
-
-📦 Recommended Technology Stack
-
-Area
-
-Technology
-
-Framework
-
-Flutter
-
-Language
-
-Dart
-
-Local Database
-
-Hive
-
-Notifications
-
-Local Notifications
-
-State Management
-
-Riverpod / Bloc
-
-Architecture
-
-Clean Architecture
-
-Platforms
-
-Android + iOS
-
-Connectivity
-
-Offline-first
-
-🧱 Development Principles
-
-Keep business logic independent from UI widgets.
-
-Prefer reusable components.
-
-Avoid duplicated scheduling logic.
-
-Keep notification IDs deterministic.
-
-Validate user input before persistence.
-
-Handle edge cases explicitly.
-
-Keep repositories testable.
-
-Use meaningful naming conventions.
-
-Handle errors instead of silently ignoring failures.
-
-Avoid unnecessary network dependencies.
-
-Maintain consistent UI behavior across Android and iOS.
-
-🚀 Production Readiness Checklist
-
-Clean Architecture implemented
-
-Hive persistence implemented
-
-Local notifications implemented
-
-Medicine CRUD completed
-
-Multiple-dose scheduling completed
-
-Start/end date handling completed
-
-No-end-date handling completed
-
-Taken/Skipped/Missed states completed
-
-Snooze implemented
-
-History implemented
-
-Search implemented
-
-Filters implemented
-
-Duplicate notification prevention implemented
-
-App-closed reminder behavior tested
-
-Device-restart recovery tested
-
-Medicine edit/delete rescheduling tested
-
-Android tested
-
-iOS tested
-
-Responsive UI tested
-
-Error states handled
-
-Accessibility reviewed
-
-Light/Dark theme reviewed
-
-🎨 UX Inspiration
-
-Existing medicine reminder applications such as Medisafe and MyTherapy may be studied for UX ideas and general product patterns.
-
-Their designs and source code must not be copied.
-
-PillMinder should have its own visual identity, interaction patterns, and implementation.
-
-📌 Expected Result
-
-The completed PillMinder application should provide a reliable medication reminder experience where:
-
-Medicine Created
-      ↓
-Data Persisted Locally
-      ↓
-Reminder Scheduled
-      ↓
-App Can Be Closed
-      ↓
-Reminder Still Appears
-      ↓
-Dose Can Be Taken / Skipped / Snoozed
-      ↓
-History Is Updated
-      ↓
-Next Reminder Is Available
-
-And after a device restart:
-
-Device Restart
-      ↓
-Application Starts
-      ↓
-Persisted Medicine Data Restored
-      ↓
-Future Schedule Reconciled
-      ↓
-Missing Reminders Rescheduled
-      ↓
-Medication Reminders Continue Reliably
-
-The goal is a production-level, offline-first Flutter medicine reminder application with reliable persistence, notification scheduling, recovery, dose tracking, and a polished user experience.
+└── features/
+    ├── dashboard/       # Schedule summary, statistics panel, date strip, search
+    ├── medicine/        # Form logic for adding, editing, pausing, and deleting
+    ├── reminder/        # Dedicated alert screen opened from notifications
+    ├── history/         # Chronological treatment logs with status/date filters
+    └── settings/        # Preferences panel (snooze, vibration, sound selector)
+```
+
+### 🔄 Data & State Flow
+```mermaid
+graph TD
+    UI[UI Widgets / Screens] -->|Events / Cubit Methods| Cubit[BLoC / Cubit Controllers]
+    Cubit -->|Invoke Actions| Repo[Medicine / Settings Repositories]
+    Repo -->|Persist Data| Hive[Hive Database]
+    Repo -->|Register Alarms| Notify[Notification Service]
+```
+
+---
+
+## 💾 Database Schema (Hive Models)
+
+1. **`MedicineModel` (Type ID: 0)**: Represents the blueprint of a medicine.
+   * `id`, `name`, `description`, `type`, `strength`, `startDate`, `endDate` (nullable), `doses` (list), `isActive`, `createdAt`, `updatedAt`.
+2. **`DoseModel` (Type ID: 1)**: Represents a dose time and size template.
+   * `id`, `time` (HH:mm), `quantity` (double), `unit` (e.g. Tablet, ml), `foodInstruction`.
+3. **`DoseOccurrenceModel` (Type ID: 2)**: Represents an individual scheduled dose.
+   * `id`, `medicineId`, `doseId`, `scheduledAt`, `dose` (frozen snapshot of quantity+strength), `foodInstruction` (frozen snapshot), `status` (`pending`, `taken`, `missed`, `skipped`), `actionAt`, `snoozedUntil`, `createdAt`.
+4. **`AppSettingsModel` (Type ID: 3)**: Stores user preferences.
+   * `sound`, `vibration` (boolean), `defaultSnoozeMinutes`, `notificationsEnabled` (boolean).
+
+---
+
+## 🔄 Reminder Lifecycle & Reconciliation
+
+### 1. Happy Path
+```mermaid
+sequenceSummary
+    Create Medicine -> Generate Occurrences -> Save to Hive -> Register Notifications -> Alert Triggers -> Action (Taken/Skipped) -> Update Hive Status -> Cancel Notification -> Persist Logs
+```
+
+### 2. Reconciliation on Startup
+When the application starts, it performs a synchronization pass:
+1. **Missed Sync**: Scans all `pending` dose occurrences in Hive. If their scheduled time has passed and they were not actioned, the status is automatically transitioned to `missed`.
+2. **Ongoing Sync**: Scans active medicines without an end date. If the latest generated occurrence is less than 7 days in the future, it automatically generates and schedules the next 14-day block.
+3. **Stale Cleanups**: Deleting or pausing a medicine cancels all future scheduled notifications and deletes future pending occurrences, retaining past history logs intact.
+
+---
+
+## 🛠️ How to Get Started
+
+### Prerequisites
+* Flutter SDK (compatible with v3.x stable channels)
+* Android SDK (API Level 26+ recommended for notifications)
+* Xcode (for iOS builds)
+
+### 1. Install Dependencies
+Clone the repository and run pub get to install all required packages (`flutter_bloc`, `hive_flutter`, `flutter_local_notifications`, `timezone`, `audioplayers`, etc.):
+```bash
+flutter pub get
+```
+
+### 2. Generate Database Adapters
+Generate the Hive type adapter files (`.g.dart`) using build_runner:
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+### 3. Run the Application
+Start the project on your connected device or emulator:
+```bash
+flutter run
+```
+
+---
+
+## 🧪 Testing & Verification
+
+The project includes unit tests located in `test/medicine_reminder_test.dart` to verify logic.
+
+### Scenarios Tested
+* **Dose Calculations**: Asserts that a 7-day range with 3 doses/day generates exactly 21 occurrences.
+* **Historical Decoupling**: Verifies that occurrence snapshots freeze strength values correctly at creation time.
+* **Bounds Alignment**: Checks that starting dates in the future are respected correctly.
+* **Dashboard calculations**: Validates stats calculations (Total, Taken, Pending, Missed, Skipped) from occurrence lists.
+
+Run the test suite using:
+```bash
+flutter test
+```
