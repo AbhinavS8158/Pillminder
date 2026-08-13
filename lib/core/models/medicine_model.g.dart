@@ -1,0 +1,71 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'medicine_model.dart';
+
+// **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
+
+class MedicineModelAdapter extends TypeAdapter<MedicineModel> {
+  @override
+  final int typeId = 0;
+
+  @override
+  MedicineModel read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return MedicineModel(
+      id: fields[0] as String,
+      name: fields[1] as String,
+      description: fields[2] as String,
+      type: fields[3] as String,
+      strength: fields[4] as String,
+      startDate: fields[5] as DateTime,
+      endDate: fields[6] as DateTime?,
+      doses: (fields[7] as List).cast<DoseModel>(),
+      isActive: fields[8] as bool,
+      createdAt: fields[9] as DateTime,
+      updatedAt: fields[10] as DateTime,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, MedicineModel obj) {
+    writer
+      ..writeByte(11)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.description)
+      ..writeByte(3)
+      ..write(obj.type)
+      ..writeByte(4)
+      ..write(obj.strength)
+      ..writeByte(5)
+      ..write(obj.startDate)
+      ..writeByte(6)
+      ..write(obj.endDate)
+      ..writeByte(7)
+      ..write(obj.doses)
+      ..writeByte(8)
+      ..write(obj.isActive)
+      ..writeByte(9)
+      ..write(obj.createdAt)
+      ..writeByte(10)
+      ..write(obj.updatedAt);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MedicineModelAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
